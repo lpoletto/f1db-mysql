@@ -4,3 +4,5 @@ data/*
 .env
 
 *.log
+
+spark_jars/

@@ -1,0 +1,62 @@
+services:
+
+  f1db-loader:
+    image: alpine:3.22
+    container_name: f1db-loader
+    networks:
+      - f1db-net
+
+    volumes:
+      - ./data:/data
+      - ./loader/entrypoint.sh:/entrypoint.sh:ro
+
+    entrypoint:
+      - /bin/sh
+      - /entrypoint.sh
+
+  mysql:
+    image: mysql:8.4
+    container_name: f1db-mysql
+    restart: unless-stopped
+    networks:
+      - f1db-net
+
+    depends_on:
+      f1db-loader:
+        condition: service_completed_successfully
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: f1db
+      MYSQL_USER: f1user
+      MYSQL_PASSWORD: f1password
+      MYSQL_HOST_AUTH_METHOD: mysql_native_password
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./data/f1db.sql:/docker-entrypoint-initdb.d/f1db.sql:ro
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-uroot",
+          "-proot"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+networks:
+  f1db-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

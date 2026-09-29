@@ -54,6 +54,46 @@ services:
       timeout: 5s
       retries: 20
 
+  jupyter-pyspark:
+    image: jupyter/pyspark-notebook:2023-04-24
+    container_name: jupyter-pyspark
+    restart: unless-stopped
+    networks:
+      - f1db-net
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - GRANT_SUDO=yes
+      - JUPYTER_TOKEN=coder
+      - SPARK_DRIVER_MEMORY=3g
+
+    cpus: 2.0
+    mem_limit: 4g
+    memswap_limit: 4g
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+
+    ports:
+      - "8888:8888"
+
+    volumes:
+      - ./notebooks:/home/jovyan/notebooks
+      - ./spark_jars:/opt/spark/jars
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/lab?token=coder"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+
 networks:
   f1db-net:
     driver: bridge

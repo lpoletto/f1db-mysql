@@ -1,7 +1,6 @@
 #!/bin/sh
 set -e
 
-# Dump comprimido versionado en este repositorio (no el .sql).
 F1DB_DUMP_URL="${F1DB_DUMP_URL:-https://github.com/lpoletto/f1db-mysql/raw/main/data/f1db.gz}"
 F1DB_GZ="/data/f1db.gz"
 F1DB_SQL="/data/f1db.sql"
@@ -11,24 +10,26 @@ echo " F1DB Downloader"
 echo " Source: ${F1DB_DUMP_URL}"
 echo "=========================================="
 
-apk add --no-cache curl
+apk add --no-cache curl gzip
 
-if [ -f "$F1DB_SQL" ]; then
-    echo "F1DB SQL already exists at ${F1DB_SQL}."
+# Clean up any stale directories/files
+echo "Cleaning up stale files..."
+rm -rf "$F1DB_GZ" "$F1DB_SQL" 2>/dev/null || true
+
+# Download if not present
+if [ -f "$F1DB_GZ" ]; then
+    echo "f1db.gz already present at ${F1DB_GZ}."
 else
-    if [ ! -f "$F1DB_GZ" ]; then
-        echo "Downloading f1db.gz from the project repository..."
-        curl -fL "$F1DB_DUMP_URL" -o "$F1DB_GZ"
-        echo "Download completed."
-    else
-        echo "Using existing ${F1DB_GZ}."
-    fi
-
-    echo "Extracting f1db.gz to ${F1DB_SQL}..."
-    gzip -dc "$F1DB_GZ" > "$F1DB_SQL"
-    echo "F1DB extracted successfully."
+    echo "Downloading f1db.gz from the project repository..."
+    curl -fL "$F1DB_DUMP_URL" -o "$F1DB_GZ"
+    echo "Download completed."
 fi
 
+# Extract to SQL
+echo "Extracting f1db.gz to f1db.sql..."
+gzip -dc "$F1DB_GZ" > "$F1DB_SQL"
+echo "Extraction completed. File ready at /data/f1db.sql"
+
 echo "=========================================="
-echo " F1DB download completed!"
+echo " F1DB setup completed!"
 echo "=========================================="

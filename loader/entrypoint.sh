@@ -1,32 +1,32 @@
 #!/bin/sh
 set -e
 
-F1DB_VERSION="2026.14.0"
-DOWNLOAD_URL="https://github.com/f1db/f1db/releases/download/v${F1DB_VERSION}/f1db-sql-mysql.zip"
+# Dump comprimido versionado en este repositorio (no el .sql).
+F1DB_DUMP_URL="${F1DB_DUMP_URL:-https://github.com/lpoletto/f1db-mysql/raw/main/data/f1db.gz}"
+F1DB_GZ="/data/f1db.gz"
+F1DB_SQL="/data/f1db.sql"
 
 echo "=========================================="
 echo " F1DB Downloader"
-echo " Version: ${F1DB_VERSION}"
+echo " Source: ${F1DB_DUMP_URL}"
 echo "=========================================="
 
-apk add --no-cache curl unzip
+apk add --no-cache curl
 
-if [ ! -f /data/f1db-sql-mysql.sql ]; then
-
-    echo "Downloading F1DB..."
-
-    curl -L "$DOWNLOAD_URL" \
-        -o /data/f1db.zip
-
-    echo "Extracting F1DB..."
-
-    unzip -o /data/f1db.zip -d /data
-
-    echo "F1DB downloaded and extracted successfully."
-
+if [ -f "$F1DB_SQL" ]; then
+    echo "F1DB SQL already exists at ${F1DB_SQL}."
 else
+    if [ ! -f "$F1DB_GZ" ]; then
+        echo "Downloading f1db.gz from the project repository..."
+        curl -fL "$F1DB_DUMP_URL" -o "$F1DB_GZ"
+        echo "Download completed."
+    else
+        echo "Using existing ${F1DB_GZ}."
+    fi
 
-    echo "F1DB SQL already exists."
+    echo "Extracting f1db.gz to ${F1DB_SQL}..."
+    gzip -dc "$F1DB_GZ" > "$F1DB_SQL"
+    echo "F1DB extracted successfully."
 fi
 
 echo "=========================================="
